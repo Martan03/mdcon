@@ -27,6 +27,10 @@ impl Gen {
         let mut lines = reader.lines().filter_map(|l| l.ok()).into_iter();
         while let Some(line) = lines.next() {
             let trim_line = line.trim();
+            if trim_line.starts_with("```") {
+                Gen::skip_code(&mut lines);
+            }
+            
             let Some(header) = Gen::get_header(trim_line) else {
                 if !trim_line.is_empty() {
                     gen.title = true;
@@ -83,6 +87,17 @@ impl Gen {
             }
         }
         res
+    }
+
+    fn skip_code<T>(lines: &mut T)
+    where
+        T: Iterator<Item = String>,
+    {
+        while let Some(line) = lines.next() {
+            if line.trim() == "```" {
+                break;
+            }
+        }
     }
 }
 

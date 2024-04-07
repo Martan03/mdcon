@@ -2,7 +2,15 @@
 
 Utility for generating **Table of contents** from Markdown file.
 
-## Installation:
+## Table of Contents:
+- [Installation](#installation)
+- [Usage](#usage)
+- [Detailes description](#detailes-description)
+    - [Example](#example)
+- [Technologies](#technologies)
+- [Links](#links)
+
+## Installation
 You have to compile it yourself, but that shouldn't be a problem. Only thing
 you need is `cargo`:
 ```
@@ -10,7 +18,7 @@ cargo build -r
 ```
 After its done compiling, you can start it in `./target/release/mdcon`
 
-## Usage:
+## Usage
 Generates **Table of contents** for `README.md`:
 ```
 ./mdcon
@@ -26,12 +34,12 @@ You can check other usage in help:
 ./mdcon -h
 ```
 
-## Detailes description:
+## Detailes description
 This utility generates **Table of contents** from Markdown file. Each item in
 the table consists of the text, which is the text corresponding to the header
 text and then the link itself, which redirects to corresponding header.
 
-### Example:
+### Example
 If we have this Markdown:
 ```markdown
 # mdcon test
@@ -51,7 +59,7 @@ We get this as an output (note that by default it skips the title):
 - [And so on...](#and-so-on)
 ```
 
-## Technologies:
+## Technologies
 I used library called [termint](https://crates.io/crates/termint) for colored
 printing.
 
