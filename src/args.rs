@@ -11,7 +11,7 @@ pub enum ArgsErr {
 
 /// Struct for parsing input arguments
 pub struct Args {
-    md_file: String,
+    pub md_file: String,
 }
 
 impl Args {
