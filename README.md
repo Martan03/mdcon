@@ -46,7 +46,7 @@ If we have this Markdown:
 ## This is a title
 bla bla bla
 
-### Subtitle
+### Sub title
 
 ## And so on...
 bla bla bla
