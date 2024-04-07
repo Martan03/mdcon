@@ -1,47 +1,36 @@
 use std::{
     cmp::min,
     fs::File,
-    io::{BufRead, BufReader},
+    io::{BufRead, BufReader, Write},
 };
 
-use crate::{args::Args, err::gen_err::GenErr};
+use crate::err::gen_err::GenErr;
 
 pub struct Gen {
-    title: bool,
     headers: Vec<(usize, String)>,
     min_cnt: usize,
 }
 
 impl Gen {
     /// Parses given file
-    pub fn parse(args: &Args, filename: &str) -> Result<Gen, GenErr> {
+    pub fn parse(filename: &str) -> Result<Gen, GenErr> {
         let mut gen = Gen::default();
-        if !args.skip_title {
-            gen.title = true;
-        }
 
         let file = File::open(filename)
             .map_err(|_| GenErr::FileAccess(filename.to_string()))?;
         let reader = BufReader::new(file);
 
-        let mut lines = reader.lines().filter_map(|l| l.ok()).into_iter();
+        let mut lines =
+            Gen::locate_token(reader.lines().filter_map(|l| l.ok()).collect());
         while let Some(line) = lines.next() {
             let trim_line = line.trim();
             if trim_line.starts_with("```") {
                 Gen::skip_code(&mut lines);
             }
-            
+
             let Some(header) = Gen::get_header(trim_line) else {
-                if !trim_line.is_empty() {
-                    gen.title = true;
-                }
                 continue;
             };
-
-            if header.0 == 1 && !gen.title {
-                gen.title = true;
-                continue;
-            }
 
             gen.min_cnt = min(gen.min_cnt, header.0);
             gen.headers.push(header);
@@ -51,18 +40,64 @@ impl Gen {
     }
 
     /// Generates contents
-    pub fn gen(&self) -> String {
+    pub fn gen(&self, filename: &str, dump: bool) {
         let mut res = String::new();
         for (cnt, header) in self.headers.iter() {
             let offset = "    ".repeat(cnt - self.min_cnt);
             res.push_str(&format!(
-                "{}- [{}](#{})\n",
+                "\n{}- [{}](#{})",
                 offset,
                 header,
                 Gen::get_header_id(header)
             ));
         }
-        res
+        if dump {
+            print!("{res}");
+        } else {
+            _ = Gen::write_toc(filename, &res);
+        }
+    }
+
+    /// Locates token in markdown
+    fn locate_token(lines: Vec<String>) -> std::vec::IntoIter<String> {
+        let mut lines_iter = lines.clone().into_iter();
+        while let Some(line) = lines_iter.next() {
+            let trim_line = line.replace(' ', "");
+            if trim_line == "```" {
+                Gen::skip_code(&mut lines_iter);
+                continue;
+            }
+            if trim_line == "{{mdcon}}" {
+                return lines_iter;
+            }
+        }
+        lines.into_iter()
+    }
+
+    fn write_toc(filename: &str, toc: &str) -> Result<(), GenErr> {
+        let file = File::open(filename)
+            .map_err(|_| GenErr::FileAccess(filename.to_string()))?;
+        let reader = BufReader::new(file);
+
+        let mut res = String::new();
+        for line in reader.lines() {
+            let Ok(line) = line else {
+                continue;
+            };
+
+            let trim_line = line.replace(' ', "");
+            if trim_line == "{{mdcon}}" {
+                res.push_str(toc);
+            } else {
+                res.push_str(&line);
+            }
+            res.push('\n');
+        }
+
+        let mut file = File::create(filename)
+            .map_err(|_| GenErr::FileAccess(filename.to_string()))?;
+        _ = file.write_all(res.as_bytes());
+        Ok(())
     }
 
     /// Gets header info from given line, None when not header
@@ -104,7 +139,6 @@ impl Gen {
 impl Default for Gen {
     fn default() -> Self {
         Self {
-            title: false,
             headers: Vec::new(),
             min_cnt: 6,
         }

@@ -15,7 +15,7 @@ fn main() {
         }
     };
 
-    let gen = match Gen::parse(&args, &args.md_file) {
+    let gen = match Gen::parse(&args.md_file) {
         Ok(gen) => gen,
         Err(e) => {
             printe(e.to_string());
@@ -23,7 +23,7 @@ fn main() {
         }
     };
 
-    println!("{}", gen.gen());
+    gen.gen(&args.md_file, false);
 }
 
 fn printe(text: String) {
