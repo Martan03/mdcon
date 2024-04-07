@@ -1,13 +1,34 @@
 use args::Args;
 use gen::Gen;
+use termint::{enums::fg::Fg, widgets::span::StrSpanExtension};
 
 mod args;
+mod err;
 mod gen;
 
-fn main() -> Result<(), String> {
-    let args = Args::parse(std::env::args()).map_err(|_| "Ups")?;
+fn main() {
+    let args = match Args::parse(std::env::args()) {
+        Ok(args) => args,
+        Err(e) => {
+            printe(e.to_string());
+            return;
+        }
+    };
 
-    let gen = Gen::parse(&args.md_file).map_err(|_| "Ups")?;
+    let gen = match Gen::parse(&args, &args.md_file) {
+        Ok(gen) => gen,
+        Err(e) => {
+            printe(e.to_string());
+            return;
+        }
+    };
+
     println!("{}", gen.gen());
-    Ok(())
+}
+
+fn printe(text: String) {
+    if text.is_empty() {
+        return;
+    }
+    eprintln!("{} {text}", "Error:".fg(Fg::Red));
 }
