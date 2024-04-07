@@ -23,7 +23,7 @@ fn main() {
         }
     };
 
-    gen.gen(&args.md_file, false);
+    gen.gen(&args.md_file, args.dump);
 }
 
 fn printe(text: String) {

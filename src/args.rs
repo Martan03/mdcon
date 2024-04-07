@@ -9,7 +9,7 @@ use crate::err::args_err::ArgsErr;
 /// Struct for parsing input arguments
 pub struct Args {
     pub md_file: String,
-    pub skip_title: bool,
+    pub dump: bool,
 }
 
 impl Args {
@@ -17,7 +17,7 @@ impl Args {
     pub fn parse(args: std::env::Args) -> Result<Args, ArgsErr> {
         let mut parsed = Self {
             md_file: "README.md".to_string(),
-            skip_title: true,
+            dump: false,
         };
 
         let mut args_iter = args.into_iter();
@@ -31,7 +31,7 @@ impl Args {
                 "-f" | "--file" => {
                     parsed.md_file = Args::get_next(&arg, &mut args_iter)?;
                 }
-                "-a" | "--all" => parsed.skip_title = false,
+                "-d" | "--dump" => parsed.dump = true,
                 a => return Err(ArgsErr::Unexpected(a.to_string())),
             }
         }
@@ -62,7 +62,7 @@ impl Args {
             "mdcom" ["options"] =>
                 "Works based on given options\n"
             "Options":
-            "-a  --all" => "Doesn't skip the title\n"
+            "-d  --dump" => "Dump table of contents to the terminal\n"
             "-f  --file" ["file"] => "File to generate contents for\n"
             "-h  --help" => "Prints this help (other options are ignored)"
         );

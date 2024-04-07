@@ -1,14 +1,16 @@
 use std::{
     cmp::min,
-    fs::File,
+    fs::{read_to_string, File},
     io::{BufRead, BufReader, Write},
 };
 
 use crate::err::gen_err::GenErr;
 
+/// Struct for generating table of contents
 pub struct Gen {
     headers: Vec<(usize, String)>,
     min_cnt: usize,
+    found: bool,
 }
 
 impl Gen {
@@ -21,7 +23,7 @@ impl Gen {
         let reader = BufReader::new(file);
 
         let mut lines =
-            Gen::locate_token(reader.lines().filter_map(|l| l.ok()).collect());
+            gen.locate_token(reader.lines().filter_map(|l| l.ok()).collect());
         while let Some(line) = lines.next() {
             let trim_line = line.trim();
             if trim_line.starts_with("```") {
@@ -45,7 +47,7 @@ impl Gen {
         for (cnt, header) in self.headers.iter() {
             let offset = "    ".repeat(cnt - self.min_cnt);
             res.push_str(&format!(
-                "\n{}- [{}](#{})",
+                "{}- [{}](#{})\n",
                 offset,
                 header,
                 Gen::get_header_id(header)
@@ -54,12 +56,15 @@ impl Gen {
         if dump {
             print!("{res}");
         } else {
-            _ = Gen::write_toc(filename, &res);
+            _ = self.write_toc(filename, &res);
         }
     }
 
     /// Locates token in markdown
-    fn locate_token(lines: Vec<String>) -> std::vec::IntoIter<String> {
+    fn locate_token(
+        &mut self,
+        lines: Vec<String>,
+    ) -> std::vec::IntoIter<String> {
         let mut lines_iter = lines.clone().into_iter();
         while let Some(line) = lines_iter.next() {
             let trim_line = line.replace(' ', "");
@@ -68,31 +73,23 @@ impl Gen {
                 continue;
             }
             if trim_line == "{{mdcon}}" {
+                self.found = true;
                 return lines_iter;
             }
         }
         lines.into_iter()
     }
 
-    fn write_toc(filename: &str, toc: &str) -> Result<(), GenErr> {
-        let file = File::open(filename)
+    /// Writes table of contens to the file
+    fn write_toc(&self, filename: &str, toc: &str) -> Result<(), GenErr> {
+        let content = read_to_string(filename)
             .map_err(|_| GenErr::FileAccess(filename.to_string()))?;
-        let reader = BufReader::new(file);
 
-        let mut res = String::new();
-        for line in reader.lines() {
-            let Ok(line) = line else {
-                continue;
-            };
-
-            let trim_line = line.replace(' ', "");
-            if trim_line == "{{mdcon}}" {
-                res.push_str(toc);
-            } else {
-                res.push_str(&line);
-            }
-            res.push('\n');
-        }
+        let res = if !self.found {
+            format!("{toc}{content}")
+        } else {
+            Gen::insert_toc(content, toc)
+        };
 
         let mut file = File::create(filename)
             .map_err(|_| GenErr::FileAccess(filename.to_string()))?;
@@ -124,6 +121,7 @@ impl Gen {
         res
     }
 
+    /// Skips code block in markdown
     fn skip_code<T>(lines: &mut T)
     where
         T: Iterator<Item = String>,
@@ -134,6 +132,21 @@ impl Gen {
             }
         }
     }
+
+    /// Inserts table of contents to the content
+    fn insert_toc(content: String, toc: &str) -> String {
+        let mut res = String::new();
+        for line in content.lines() {
+            let trim_line = line.replace(' ', "");
+            if trim_line == "{{mdcon}}" {
+                res.push_str(toc);
+            } else {
+                res.push_str(&line);
+                res.push('\n');
+            }
+        }
+        res
+    }
 }
 
 impl Default for Gen {
@@ -141,6 +154,7 @@ impl Default for Gen {
         Self {
             headers: Vec::new(),
             min_cnt: 6,
+            found: false,
         }
     }
 }
