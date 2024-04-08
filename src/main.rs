@@ -23,7 +23,10 @@ fn main() {
         }
     };
 
-    gen.gen(&args.md_file, args.dump);
+    match gen.gen(&args.md_file, args.dump) {
+        Ok(_) => {}
+        Err(e) => printe(e.to_string()),
+    }
 }
 
 fn printe(text: String) {

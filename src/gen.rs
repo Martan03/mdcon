@@ -42,7 +42,7 @@ impl Gen {
     }
 
     /// Generates contents
-    pub fn gen(&self, filename: &str, dump: bool) {
+    pub fn gen(&self, filename: &str, dump: bool) -> Result<(), GenErr> {
         let mut res = String::new();
         for (cnt, header) in self.headers.iter() {
             let offset = "    ".repeat(cnt - self.min_cnt);
@@ -56,8 +56,10 @@ impl Gen {
         if dump {
             print!("{res}");
         } else {
-            _ = self.write_toc(filename, &res);
+            self.write_toc(filename, &res)
+                .map_err(|_| GenErr::FileWrite(filename.to_string()))?;
         }
+        Ok(())
     }
 
     /// Locates token in markdown
@@ -93,7 +95,8 @@ impl Gen {
 
         let mut file = File::create(filename)
             .map_err(|_| GenErr::FileAccess(filename.to_string()))?;
-        _ = file.write_all(res.as_bytes());
+        file.write_all(res.as_bytes())
+            .map_err(|_| GenErr::FileWrite(filename.to_string()))?;
         Ok(())
     }
 
