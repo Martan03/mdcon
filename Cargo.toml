@@ -6,4 +6,6 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-termint = "0.4.1"
+pareg = "0.13.0"
+termal = "5.1.1"
+thiserror = "2.0.20"

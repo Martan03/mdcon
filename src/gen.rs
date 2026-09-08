@@ -2,11 +2,13 @@ use std::{
     cmp::min,
     fs::{read_to_string, File},
     io::{BufRead, BufReader, Write},
+    path::Path,
 };
 
-use crate::err::gen_err::GenErr;
+use crate::{args::Args, error::Error};
 
 /// Struct for generating table of contents
+#[derive(Debug)]
 pub struct Gen {
     headers: Vec<(usize, String)>,
     min_cnt: usize,
@@ -15,11 +17,10 @@ pub struct Gen {
 
 impl Gen {
     /// Parses given file
-    pub fn parse(filename: &str) -> Result<Gen, GenErr> {
+    pub fn parse(filename: &Path) -> Result<Gen, Error> {
         let mut gen = Gen::default();
 
-        let file = File::open(filename)
-            .map_err(|_| GenErr::FileAccess(filename.to_string()))?;
+        let file = File::open(filename)?;
         let reader = BufReader::new(file);
 
         let mut lines =
@@ -42,10 +43,15 @@ impl Gen {
     }
 
     /// Generates contents
-    pub fn gen(&self, filename: &str, dump: bool) -> Result<(), GenErr> {
+    pub fn gen(&self, args: &Args) -> Result<(), Error> {
         let mut res = String::new();
         for (cnt, header) in self.headers.iter() {
-            let offset = "    ".repeat(cnt - self.min_cnt);
+            let ident = cnt - self.min_cnt;
+            if ident >= args.max_ident {
+                continue;
+            }
+
+            let offset = "    ".repeat(ident);
             res.push_str(&format!(
                 "{}- [{}](#{})\n",
                 offset,
@@ -53,11 +59,10 @@ impl Gen {
                 Gen::get_header_id(header)
             ));
         }
-        if dump {
+        if args.dump {
             print!("{res}");
         } else {
-            self.write_toc(filename, &res)
-                .map_err(|_| GenErr::FileWrite(filename.to_string()))?;
+            self.write_toc(&args.md_file, &res)?;
         }
         Ok(())
     }
@@ -83,9 +88,8 @@ impl Gen {
     }
 
     /// Writes table of contens to the file
-    fn write_toc(&self, filename: &str, toc: &str) -> Result<(), GenErr> {
-        let content = read_to_string(filename)
-            .map_err(|_| GenErr::FileAccess(filename.to_string()))?;
+    fn write_toc(&self, path: &Path, toc: &str) -> Result<(), Error> {
+        let content = read_to_string(path)?;
 
         let res = if !self.found {
             format!("{toc}{content}")
@@ -93,10 +97,8 @@ impl Gen {
             Gen::insert_toc(content, toc)
         };
 
-        let mut file = File::create(filename)
-            .map_err(|_| GenErr::FileAccess(filename.to_string()))?;
-        file.write_all(res.as_bytes())
-            .map_err(|_| GenErr::FileWrite(filename.to_string()))?;
+        let mut file = File::create(path)?;
+        file.write_all(res.as_bytes())?;
         Ok(())
     }
 

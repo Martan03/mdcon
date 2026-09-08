@@ -1,70 +1,95 @@
-use termint::{
-    enums::fg::Fg,
-    help,
-    widgets::{grad::Grad, span::StrSpanExtension},
-};
+use std::path::PathBuf;
 
-use crate::err::args_err::ArgsErr;
+use pareg::Pareg;
+use termal::printcln;
+
+use crate::error::Error;
 
 /// Struct for parsing input arguments
 pub struct Args {
-    pub md_file: String,
+    pub md_file: PathBuf,
+    pub max_ident: usize,
     pub dump: bool,
+    pub should_exit: bool,
 }
 
 impl Args {
-    /// Parses given arguments
-    pub fn parse(args: std::env::Args) -> Result<Args, ArgsErr> {
-        let mut parsed = Self {
-            md_file: "README.md".to_string(),
-            dump: false,
-        };
+    pub const VERSION_NUMBER: &str = {
+        let v = option_env!("CARGO_PKG_VERSION");
+        if let Some(v) = v {
+            v
+        } else {
+            "unknown"
+        }
+    };
 
-        let mut args_iter = args.into_iter();
-        args_iter.next();
-        while let Some(arg) = args_iter.next() {
+    pub fn parse(mut args: Pareg) -> Result<Self, Error> {
+        let mut parsed = Self::default();
+
+        while let Some(arg) = args.next() {
             match arg.as_str() {
-                "-h" | "--help" => {
-                    Args::help();
-                    return Err(ArgsErr::ExitSucc);
-                }
-                "-f" | "--file" => {
-                    parsed.md_file = Args::get_next(&arg, &mut args_iter)?;
-                }
+                "-f" | "--file" => parsed.md_file = args.next_arg()?,
+                "-m" | "--max-ident" => parsed.max_ident = args.next_arg()?,
                 "-d" | "--dump" => parsed.dump = true,
-                a => return Err(ArgsErr::Unexpected(a.to_string())),
+                "-h" | "--help" | "help" => {
+                    Self::help();
+                    parsed.should_exit = true;
+                    break;
+                }
+                "-v" | "--version" => {
+                    Self::version();
+                    parsed.should_exit = true;
+                    break;
+                }
+                _ => return args.err_unknown_argument().err()?,
             }
         }
         Ok(parsed)
     }
 
-    /// Gets next arguments
-    fn get_next<T>(arg: &str, args: &mut T) -> Result<String, ArgsErr>
-    where
-        T: Iterator<Item = String>,
-    {
-        let Some(arg) = args.next() else {
-            return Err(ArgsErr::MissingOp(arg.to_string()));
-        };
-        Ok(arg)
+    /// Prints the help.
+    pub fn help() {
+        printcln!(
+            "Welcome to {'g}mdcon{'_} by {}{'_}
+{'bl}Version {}{'_}
+
+{'g}Usage{'_}:
+  {'c}mdcon{'_}
+    Generates contents for 'README.md'.
+
+  {'c}mdcon{'_} [{'y}flags{'_}]
+    Behaves according to the flags.
+
+{'g}Flags{'_}:
+  {'y}-d  --dump{'_}
+    Dump table of contents to the terminal.
+
+  {'y}-f  --file{'_}
+    File to generate contents for.
+
+  {'y}-h  --help{'_}
+    Displays this help.
+
+  {'y}-v  --version{'_}
+    Displays the version number of {'c}mdcon{'_}.",
+            termal::gradient("Martan03", (0, 220, 255), (175, 80, 255)),
+            Self::VERSION_NUMBER,
+        );
     }
 
-    /// Prints help
-    fn help() {
-        println!(
-            "Welcome in {} by {}\n",
-            "mdcom".fg(Fg::Green),
-            Grad::new("Martan03", (0, 220, 255), (175, 80, 255))
-        );
-        help!(
-            "Usage":
-            "mdcom" => "Generates contents for 'README.md'\n"
-            "mdcom" ["options"] =>
-                "Works based on given options\n"
-            "Options":
-            "-d  --dump" => "Dump table of contents to the terminal\n"
-            "-f  --file" ["file"] => "File to generate contents for\n"
-            "-h  --help" => "Prints this help (other options are ignored)"
-        );
+    /// Prints the app version
+    pub fn version() {
+        println!("mdcon {}", Self::VERSION_NUMBER)
+    }
+}
+
+impl Default for Args {
+    fn default() -> Self {
+        Self {
+            md_file: PathBuf::from("README.md"),
+            max_ident: 6,
+            dump: false,
+            should_exit: false,
+        }
     }
 }

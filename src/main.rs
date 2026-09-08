@@ -1,37 +1,33 @@
+use std::process::ExitCode;
+
 use args::Args;
 use gen::Gen;
-use termint::{enums::fg::Fg, widgets::span::StrSpanExtension};
+use pareg::Pareg;
+use termal::eprintcln;
+
+use crate::error::Error;
 
 mod args;
-mod err;
+mod error;
 mod gen;
 
-fn main() {
-    let args = match Args::parse(std::env::args()) {
-        Ok(args) => args,
+fn main() -> ExitCode {
+    match run() {
+        Ok(_) => ExitCode::SUCCESS,
         Err(e) => {
-            printe(e.to_string());
-            return;
+            eprintcln!("{'r}Error:{'_} {}", e);
+            ExitCode::FAILURE
         }
-    };
-
-    let gen = match Gen::parse(&args.md_file) {
-        Ok(gen) => gen,
-        Err(e) => {
-            printe(e.to_string());
-            return;
-        }
-    };
-
-    match gen.gen(&args.md_file, args.dump) {
-        Ok(_) => {}
-        Err(e) => printe(e.to_string()),
     }
 }
 
-fn printe(text: String) {
-    if text.is_empty() {
-        return;
+fn run() -> Result<(), Error> {
+    let args = Args::parse(Pareg::args())?;
+    if args.should_exit {
+        return Ok(());
     }
-    eprintln!("{} {text}", "Error:".fg(Fg::Red));
+
+    let gen = Gen::parse(&args.md_file)?;
+    gen.gen(&args)?;
+    Ok(())
 }
