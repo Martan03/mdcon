@@ -1,4 +1,4 @@
-# mdcon
+![mdcon preview](assets/mdcon.png)
 
 Utility for generating **Table of contents** from Markdown file.
 
