@@ -4,26 +4,25 @@ Utility for generating **Table of contents** from Markdown file.
 
 ## Table of Contents:
 
-{{mdcon}}
-<!--- [Installation](#installation)
+- [Installation](#installation)
 - [Usage](#usage)
-- [Detailes description](#detailes-description)
-    - [Token to insert to file](#token-to-insert-to-file)
-        - [Example](#example)
+- [Detailed description](#detailed-description)
+    - [mdcon token](#mdcon-token)
     - [Dumping Table of Contents](#dumping-table-of-contents)
-- [Technologies](#technologies)
-- [Links](#links)-->
+- [Links](#links)
 
 ## Installation
 
-You have to compile it yourself, but that shouldn't be a problem. Only thing
-you need is `cargo`:
+Currently there's no other way of installing than building it yourself. You
+need to have Rust Toolchain installed (see
+[rust installation page](https://www.rust-lang.org/tools/install)). When you
+have the Rust Toochain, you can build the project with `cargo`:
 
-```
+```bash
 cargo build -r
 ```
 
-After its done compiling, you can start it in `./target/release/mdcon`
+After it's done compiling, the binary will be `target/release/mdcon`.
 
 ## Usage
 
@@ -45,19 +44,19 @@ You can check other usage in help:
 ./mdcon -h
 ```
 
-## Detailes description
+## Detailed description
 
 This utility generates **Table of contents** from Markdown file. Each item in
 the table consists of the text, which is the text corresponding to the header
 text and then the link itself, which redirects to corresponding header.
 
-### Token to insert to file
+### mdcon token
 
-You can use special **token** to insert **Table of contens** to the file to
-that location. If no token is found, **Table of contents** are placed to the
-beginning of the file.
+You can use special **token** in order to insert the **Table of contents**
+into specific location in the file. If no token is provided, **Table of**
+**contents** are placed to the beginning of the file.
 
-Token looks like this:
+The token looks like this:
 
 ```
 {{ mdcon }}
@@ -69,7 +68,7 @@ this token with **Table of contents**.
 
 #### Example
 
-If we have this Markdown:
+If we have this markdown:
 
 ```markdown
 # mdcon test
@@ -111,11 +110,6 @@ bla bla bla
 
 If you don't want to place **Table of contents** to the file, you can use `-d`
 flag to dump the table to `stdout`.
-
-## Technologies
-
-I used library called [termint](https://crates.io/crates/termint) for colored
-printing.
 
 ## Links
 

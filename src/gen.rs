@@ -1,11 +1,4 @@
-use std::{
-    cmp::min,
-    fs::{read_to_string, File},
-    io::{BufRead, BufReader, Write},
-    path::Path,
-};
-
-use crate::{args::Args, error::Error};
+use std::cmp::min;
 
 /// Struct for generating table of contents
 #[derive(Debug)]
@@ -17,14 +10,10 @@ pub struct Gen {
 
 impl Gen {
     /// Parses given file
-    pub fn parse(filename: &Path) -> Result<Gen, Error> {
+    pub fn parse(content: &str) -> Gen {
         let mut gen = Gen::default();
 
-        let file = File::open(filename)?;
-        let reader = BufReader::new(file);
-
-        let mut lines =
-            gen.locate_token(reader.lines().filter_map(|l| l.ok()).collect());
+        let mut lines = gen.locate_token(content);
         while let Some(line) = lines.next() {
             let trim_line = line.trim();
             if trim_line.starts_with("```") {
@@ -38,16 +27,15 @@ impl Gen {
             gen.min_cnt = min(gen.min_cnt, header.0);
             gen.headers.push(header);
         }
-
-        Ok(gen)
+        gen
     }
 
     /// Generates contents
-    pub fn gen(&self, args: &Args) -> Result<(), Error> {
+    pub fn gen_toc(&self, max_ident: usize) -> String {
         let mut res = String::new();
         for (cnt, header) in self.headers.iter() {
             let ident = cnt - self.min_cnt;
-            if ident >= args.max_ident {
+            if ident >= max_ident {
                 continue;
             }
 
@@ -59,47 +47,54 @@ impl Gen {
                 Gen::get_header_id(header)
             ));
         }
-        if args.dump {
-            print!("{res}");
-        } else {
-            self.write_toc(&args.md_file, &res)?;
+        res
+    }
+
+    /// Inserts the given table of contents into the content.
+    pub fn insert_toc(&self, content: &str, toc: &str) -> String {
+        if !self.found {
+            return format!("{}{}", toc, content);
         }
-        Ok(())
+
+        let mut res = String::with_capacity(content.len() + toc.len());
+        let mut in_code = false;
+        for line in content.lines() {
+            let trim_line = line.trim();
+
+            if !in_code && trim_line.starts_with("```") {
+                in_code = true;
+            } else if in_code && trim_line == "```" {
+                in_code = false;
+            }
+
+            if !in_code && Self::is_mdcon(line) {
+                res.push_str(toc);
+            } else {
+                res.push_str(&line);
+                res.push('\n');
+            }
+        }
+        res
     }
 
     /// Locates token in markdown
-    fn locate_token(
-        &mut self,
-        lines: Vec<String>,
-    ) -> std::vec::IntoIter<String> {
-        let mut lines_iter = lines.clone().into_iter();
-        while let Some(line) = lines_iter.next() {
-            let trim_line = line.replace(' ', "");
-            if trim_line == "```" {
-                Gen::skip_code(&mut lines_iter);
+    fn locate_token<'a>(&mut self, content: &'a str) -> std::str::Lines<'a> {
+        let mut lines = content.lines();
+        while let Some(line) = lines.next() {
+            let trim_line = line.trim();
+            if trim_line.starts_with("```") {
+                Gen::skip_code(&mut lines);
                 continue;
             }
-            if trim_line == "{{mdcon}}" {
+
+            if Self::is_mdcon(line) {
                 self.found = true;
-                return lines_iter;
+                return lines;
             }
         }
-        lines.into_iter()
-    }
 
-    /// Writes table of contens to the file
-    fn write_toc(&self, path: &Path, toc: &str) -> Result<(), Error> {
-        let content = read_to_string(path)?;
-
-        let res = if !self.found {
-            format!("{toc}{content}")
-        } else {
-            Gen::insert_toc(content, toc)
-        };
-
-        let mut file = File::create(path)?;
-        file.write_all(res.as_bytes())?;
-        Ok(())
+        self.found = false;
+        content.lines()
     }
 
     /// Gets header info from given line, None when not header
@@ -127,30 +122,19 @@ impl Gen {
     }
 
     /// Skips code block in markdown
-    fn skip_code<T>(lines: &mut T)
+    fn skip_code<'a, T>(lines: &mut T)
     where
-        T: Iterator<Item = String>,
+        T: Iterator<Item = &'a str>,
     {
-        while let Some(line) = lines.next() {
+        for line in lines {
             if line.trim() == "```" {
                 break;
             }
         }
     }
 
-    /// Inserts table of contents to the content
-    fn insert_toc(content: String, toc: &str) -> String {
-        let mut res = String::new();
-        for line in content.lines() {
-            let trim_line = line.replace(' ', "");
-            if trim_line == "{{mdcon}}" {
-                res.push_str(toc);
-            } else {
-                res.push_str(&line);
-                res.push('\n');
-            }
-        }
-        res
+    fn is_mdcon(line: &str) -> bool {
+        line.chars().filter(|c| *c != ' ').eq("{{mdcon}}".chars())
     }
 }
 

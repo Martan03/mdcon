@@ -27,7 +27,15 @@ fn run() -> Result<(), Error> {
         return Ok(());
     }
 
-    let gen = Gen::parse(&args.md_file)?;
-    gen.gen(&args)?;
+    let content = std::fs::read_to_string(&args.md_file)?;
+    let gen = Gen::parse(&content);
+    let toc = gen.gen_toc(args.max_ident);
+
+    if args.dump {
+        print!("{toc}");
+    } else {
+        let text = gen.insert_toc(&content, &toc);
+        std::fs::write(&args.md_file, text)?;
+    }
     Ok(())
 }
