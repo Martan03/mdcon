@@ -4,12 +4,14 @@ Utility for generating **Table of contents** from Markdown file.
 
 ## Table of Contents:
 
+<!-- mdcon-start -->
 - [Installation](#installation)
 - [Usage](#usage)
 - [Detailed description](#detailed-description)
     - [mdcon token](#mdcon-token)
     - [Dumping Table of Contents](#dumping-table-of-contents)
 - [Links](#links)
+<!-- mdcon-end -->
 
 ## Installation
 
@@ -66,6 +68,15 @@ You can place it anywhere you want and `mdcon` will generate contents from
 headers only after this token. After generating, it will automatically replace
 this token with **Table of contents**.
 
+**TOC updates:**
+
+After generating TOC, `mdcon` wraps it in HTML comments marking the beginning
+and end. Thanks to these comments `mdcon` is able to regenerate already 
+existing TOC, without you having to place a new token inside of the file.
+
+> [!WARNING]
+> You have to keep the comments in order to keep this functionality.
+
 #### Example
 
 If we have this markdown:
@@ -91,9 +102,11 @@ Our file will be modified to this:
 ```markdown
 # mdcon test
 
+<!-- mdcon-start -->
 - [This is a title](#this-is-a-title)
     - [Sub title](#sub-title)
 - [And so on...](#and-so-on)
+<!-- mdcon-end -->
 
 ## This is a title
 

@@ -3,7 +3,7 @@ use std::process::ExitCode;
 use args::Args;
 use gen::Gen;
 use pareg::Pareg;
-use termal::eprintcln;
+use termal::{eprintcln, printcln};
 
 use crate::error::Error;
 
@@ -35,7 +35,18 @@ fn run() -> Result<(), Error> {
         print!("{toc}");
     } else {
         let text = gen.insert_toc(&content, &toc);
-        std::fs::write(&args.md_file, text)?;
+        if text != content {
+            std::fs::write(&args.md_file, text)?;
+            printcln!(
+                "{'g}Success:{'_} Updated TOC in {}",
+                args.md_file.to_string_lossy()
+            );
+        } else {
+            printcln!(
+                "{'b}Info:{'_} Toc in {} is already up to date",
+                args.md_file.to_string_lossy()
+            );
+        }
     }
     Ok(())
 }

@@ -9,7 +9,11 @@ pub struct Gen {
 }
 
 impl Gen {
-    /// Parses given file
+    /// Parses the file for headers.
+    ///
+    /// **Behavior:**
+    /// - If TOC marker is found, it only indexes headers after the marker.
+    /// - If no marker is found, it indexes all headers.
     pub fn parse(content: &str) -> Gen {
         let mut gen = Gen::default();
 
@@ -30,7 +34,7 @@ impl Gen {
         gen
     }
 
-    /// Generates contents
+    /// Generates table of contents from the indexed headers.
     pub fn gen_toc(&self, max_ident: usize) -> String {
         let mut res = String::new();
         for (cnt, header) in self.headers.iter() {
@@ -51,13 +55,22 @@ impl Gen {
     }
 
     /// Inserts the given table of contents into the content.
+    ///
+    /// **Behavior:**
+    /// - If no token is found, it puts the TOC in the beginning of the file.
+    /// - If HTML mdcon marker is found, it replaces that TOC inside it with
+    ///   the updated one.
     pub fn insert_toc(&self, content: &str, toc: &str) -> String {
+        let wrapped_toc =
+            format!("<!-- mdcon-start -->\n{}<!-- mdcon-end -->\n", toc);
+
         if !self.found {
-            return format!("{}{}", toc, content);
+            return format!("{}{}", wrapped_toc, content);
         }
 
-        let mut res = String::with_capacity(content.len() + toc.len());
+        let mut res = String::with_capacity(content.len() + wrapped_toc.len());
         let mut in_code = false;
+        let mut in_toc = false;
         for line in content.lines() {
             let trim_line = line.trim();
 
@@ -67,12 +80,28 @@ impl Gen {
                 in_code = false;
             }
 
-            if !in_code && Self::is_mdcon(line) {
-                res.push_str(toc);
-            } else {
-                res.push_str(&line);
-                res.push('\n');
+            if !in_code {
+                if Self::is_mdcon(line) {
+                    res.push_str(&wrapped_toc);
+                    continue;
+                }
+
+                if trim_line == "<!-- mdcon-start -->" {
+                    in_toc = true;
+                    res.push_str(&wrapped_toc);
+                    continue;
+                }
+
+                if in_toc {
+                    if trim_line == "<!-- mdcon-end -->" {
+                        in_toc = false;
+                    }
+                    continue;
+                }
             }
+
+            res.push_str(&line);
+            res.push('\n');
         }
         res
     }
@@ -87,7 +116,7 @@ impl Gen {
                 continue;
             }
 
-            if Self::is_mdcon(line) {
+            if Self::is_mdcon(line) || trim_line == "<!-- mdcon-start -->" {
                 self.found = true;
                 return lines;
             }
