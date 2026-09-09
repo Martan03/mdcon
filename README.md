@@ -40,6 +40,12 @@ Generates **Tables of contents** for given file:
 ./mdcon -f file.md
 ```
 
+You can also check whether the TOC in the file is up to date:
+
+```bash
+./mdcon -f file.md -c
+```
+
 You can check other usage in help:
 
 ```

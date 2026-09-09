@@ -33,20 +33,35 @@ fn run() -> Result<(), Error> {
 
     if args.dump {
         print!("{toc}");
-    } else {
-        let text = gen.insert_toc(&content, &toc);
-        if text != content {
-            std::fs::write(&args.md_file, text)?;
-            printcln!(
-                "{'g}Success:{'_} Updated TOC in {}",
-                args.md_file.to_string_lossy()
-            );
-        } else {
-            printcln!(
-                "{'b}Info:{'_} Toc in {} is already up to date",
-                args.md_file.to_string_lossy()
-            );
-        }
+        return Ok(());
     }
+
+    let text = gen.insert_toc(&content, &toc);
+    if eq_semantic(&content, &text) {
+        printcln!(
+            "{'b}Info:{'_} TOC in {} is already up to date.",
+            args.md_file.to_string_lossy()
+        );
+        return Ok(());
+    }
+
+    if args.check {
+        return Err(
+            "TOC check failed (out of date). Run without --check to update."
+                .into(),
+        );
+    }
+
+    std::fs::write(&args.md_file, text)?;
+    printcln!(
+        "{'g}Success:{'_} Updated TOC in {}.",
+        args.md_file.to_string_lossy()
+    );
     Ok(())
+}
+
+fn eq_semantic(orig: &str, new: &str) -> bool {
+    let orig_lines = orig.lines().map(str::trim).filter(|l| !l.is_empty());
+    let new_lines = new.lines().map(str::trim).filter(|l| !l.is_empty());
+    orig_lines.eq(new_lines)
 }

@@ -10,6 +10,7 @@ pub struct Args {
     pub md_file: PathBuf,
     pub max_ident: usize,
     pub dump: bool,
+    pub check: bool,
     pub should_exit: bool,
 }
 
@@ -31,6 +32,7 @@ impl Args {
                 "-f" | "--file" => parsed.md_file = args.next_arg()?,
                 "-m" | "--max-ident" => parsed.max_ident = args.next_arg()?,
                 "-d" | "--dump" => parsed.dump = true,
+                "-c" | "--check" => parsed.check = true,
                 "-h" | "--help" | "help" => {
                     Self::help();
                     parsed.should_exit = true;
@@ -64,6 +66,9 @@ impl Args {
   {'y}-d  --dump{'_}
     Dump table of contents to the terminal.
 
+  {'y}-c  --check{'_}
+    Checks whether TOC is up to date.
+
   {'y}-f  --file{'_}
     File to generate contents for.
 
@@ -89,6 +94,7 @@ impl Default for Args {
             md_file: PathBuf::from("README.md"),
             max_ident: 6,
             dump: false,
+            check: false,
             should_exit: false,
         }
     }
