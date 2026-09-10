@@ -6,25 +6,50 @@ Utility for generating **Table of contents** from Markdown file.
 
 <!-- mdcon-start -->
 - [Installation](#installation)
+    - [Arch Linux](#arch-linux)
+    - [Cargo](#cargo)
+    - [Build from source](#build-from-source)
 - [Usage](#usage)
 - [Detailed description](#detailed-description)
     - [mdcon token](#mdcon-token)
+        - [Example](#example)
     - [Dumping Table of Contents](#dumping-table-of-contents)
 - [Links](#links)
 <!-- mdcon-end -->
 
 ## Installation
 
-Currently there's no other way of installing than building it yourself. You
-need to have Rust Toolchain installed (see
-[rust installation page](https://www.rust-lang.org/tools/install)). When you
-have the Rust Toochain, you can build the project with `cargo`:
+### Arch Linux
+
+If you have Arch Linux, you can install `mdcon` from
+[aur](https://aur.archlinux.org/packages/mdcon). When using `yay`, you can do:
 
 ```bash
+yay -S mdcon-bin
+```
+
+### Cargo
+
+Another way to install `mdcon` is via the Rust toolchain (see
+[rust installation page](https://www.rust-lang.org/tools/install)). When you
+have the Rust Toolchain, you can install the project from source:
+
+```bash
+cargo install mdcon
+```
+
+### Build from source
+
+You can also build it directly from source. Similar to installing via `cargo`
+you need the Rust toolchain:
+
+```bash
+git clone https://github.com/Martan03/mdcon
+cd mdcon
 cargo build -r
 ```
 
-After it's done compiling, the binary will be `target/release/mdcon`.
+The binary will be `./target/release/mdcon`.
 
 ## Usage
 
