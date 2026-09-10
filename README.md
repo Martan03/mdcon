@@ -12,7 +12,6 @@ Utility for generating **Table of contents** from Markdown file.
 - [Usage](#usage)
 - [Detailed description](#detailed-description)
     - [mdcon token](#mdcon-token)
-        - [Example](#example)
     - [Dumping Table of Contents](#dumping-table-of-contents)
 - [Links](#links)
 <!-- mdcon-end -->

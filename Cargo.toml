@@ -1,7 +1,13 @@
 [package]
 name = "mdcon"
 version = "0.1.0"
-edition = "2021"
+edition = "2024"
+authors = ["Martin Slezák (github.com/Martan03)"]
+description = "Utility for generating Table of Contents from Markdown file."
+keywords = ["table-of-contents", "toc-generator", "markdown", "markdown-toc"]
+repository = "https://github.com/Martan03/mdcon"
+readme = "README.md"
+license-file = "LICENSE"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 

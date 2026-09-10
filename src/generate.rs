@@ -15,9 +15,9 @@ impl Gen {
     /// - If TOC marker is found, it only indexes headers after the marker.
     /// - If no marker is found, it indexes all headers.
     pub fn parse(content: &str) -> Gen {
-        let mut gen = Gen::default();
+        let mut generator = Gen::default();
 
-        let mut lines = gen.locate_token(content);
+        let mut lines = generator.locate_token(content);
         while let Some(line) = lines.next() {
             let trim_line = line.trim();
             if trim_line.starts_with("```") {
@@ -28,10 +28,10 @@ impl Gen {
                 continue;
             };
 
-            gen.min_cnt = min(gen.min_cnt, header.0);
-            gen.headers.push(header);
+            generator.min_cnt = min(generator.min_cnt, header.0);
+            generator.headers.push(header);
         }
-        gen
+        generator
     }
 
     /// Generates table of contents from the indexed headers.
@@ -100,7 +100,7 @@ impl Gen {
                 }
             }
 
-            res.push_str(&line);
+            res.push_str(line);
             res.push('\n');
         }
         res

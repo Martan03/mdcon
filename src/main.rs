@@ -1,7 +1,7 @@
 use std::process::ExitCode;
 
 use args::Args;
-use gen::Gen;
+use generate::Gen;
 use pareg::Pareg;
 use termal::{eprintcln, printcln};
 
@@ -9,7 +9,7 @@ use crate::error::Error;
 
 mod args;
 mod error;
-mod gen;
+mod generate;
 
 fn main() -> ExitCode {
     match run() {
@@ -28,15 +28,15 @@ fn run() -> Result<(), Error> {
     }
 
     let content = std::fs::read_to_string(&args.md_file)?;
-    let gen = Gen::parse(&content);
-    let toc = gen.gen_toc(args.max_ident);
+    let generator = Gen::parse(&content);
+    let toc = generator.gen_toc(args.max_ident);
 
     if args.dump {
         print!("{toc}");
         return Ok(());
     }
 
-    let text = gen.insert_toc(&content, &toc);
+    let text = generator.insert_toc(&content, &toc);
     if eq_semantic(&content, &text) {
         printcln!(
             "{'b}Info:{'_} TOC in {} is already up to date.",
